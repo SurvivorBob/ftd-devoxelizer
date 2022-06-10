@@ -155,7 +155,7 @@ def main():
 
     # filter voxels by depth
     voxels_by_depth = {}
-    for d in range(min(max_depth, args.thickness)):
+    for d in range(max(min(max_depth, args.thickness), 2)):
         voxels_by_depth[d + 1] = set()
     
     for v, d in voxel_depths.items():
