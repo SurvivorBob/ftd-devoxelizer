@@ -159,7 +159,7 @@ def main():
         voxels_by_depth[d + 1] = set()
     
     for v, d in voxel_depths.items():
-        if d in voxels_by_depth:
+        if d in voxels_by_depth and d <= args.thickness:
             voxels_by_depth[d].add(v)
 
     for d in voxels_by_depth.keys():
@@ -249,7 +249,9 @@ def main():
                 b |= BITS_NEGZ
             return b
         
-        # returns a (block type, orientation, check for layer 2, implies square face in direction) based on empty space
+        # returns a (block type, orientation, check for layer 2, 
+        #   implies square face in direction, implies empty space in direction)
+        # based on empty space
         # this is a table lookup because deriving this computationally sounds horrific
         cornerness_map = {
             # slopes
@@ -282,27 +284,27 @@ def main():
 
         # maps (empty space + slopes + corners bitmap to inverse corners)
         inverse_cornerness_map = {
-            BITS_POSX | BITS_POSY | BITS_POSZ: (invcorner_id, 0, 0, BITS_NEGX | BITS_NEGY | BITS_NEGZ),
-            BITS_POSX | BITS_POSY | BITS_NEGZ: (invcorner_id, 1, 0, BITS_NEGX | BITS_NEGY | BITS_POSZ),
-            BITS_POSX | BITS_NEGY | BITS_POSZ: (invcorner_id, 16, 0, BITS_NEGX | BITS_POSY | BITS_NEGZ),
-            BITS_POSX | BITS_NEGY | BITS_NEGZ: (invcorner_id, 22, 0, BITS_NEGX | BITS_POSY | BITS_POSZ),
-            BITS_NEGX | BITS_POSY | BITS_POSZ: (invcorner_id, 3, 0, BITS_POSX | BITS_NEGY | BITS_NEGZ),
-            BITS_NEGX | BITS_POSY | BITS_NEGZ: (invcorner_id, 2, 0, BITS_POSX | BITS_NEGY | BITS_POSZ),
-            BITS_NEGX | BITS_NEGY | BITS_POSZ: (invcorner_id, 21, 0, BITS_POSX | BITS_POSY | BITS_NEGZ),
-            BITS_NEGX | BITS_NEGY | BITS_NEGZ: (invcorner_id, 19, 0, BITS_POSX | BITS_POSY | BITS_POSZ),
+            BITS_POSX | BITS_POSY | BITS_POSZ: (invcorner_id, 0, 0, BITS_NEGX | BITS_NEGY | BITS_NEGZ, 0),
+            BITS_POSX | BITS_POSY | BITS_NEGZ: (invcorner_id, 1, 0, BITS_NEGX | BITS_NEGY | BITS_POSZ, 0),
+            BITS_POSX | BITS_NEGY | BITS_POSZ: (invcorner_id, 16, 0, BITS_NEGX | BITS_POSY | BITS_NEGZ, 0),
+            BITS_POSX | BITS_NEGY | BITS_NEGZ: (invcorner_id, 22, 0, BITS_NEGX | BITS_POSY | BITS_POSZ, 0),
+            BITS_NEGX | BITS_POSY | BITS_POSZ: (invcorner_id, 3, 0, BITS_POSX | BITS_NEGY | BITS_NEGZ, 0),
+            BITS_NEGX | BITS_POSY | BITS_NEGZ: (invcorner_id, 2, 0, BITS_POSX | BITS_NEGY | BITS_POSZ, 0),
+            BITS_NEGX | BITS_NEGY | BITS_POSZ: (invcorner_id, 21, 0, BITS_POSX | BITS_POSY | BITS_NEGZ, 0),
+            BITS_NEGX | BITS_NEGY | BITS_NEGZ: (invcorner_id, 19, 0, BITS_POSX | BITS_POSY | BITS_POSZ, 0),
 
-            BITS_POSX | BITS_POSY | BITS_POSZ | BITS_NEGZ: (slope_id, 1, 0, BITS_NEGX | BITS_NEGY),
-            BITS_POSX | BITS_NEGY | BITS_POSZ | BITS_NEGZ: (slope_id, 13, 0, BITS_NEGX | BITS_POSY),
-            BITS_POSX | BITS_POSZ | BITS_POSY | BITS_NEGY: (slope_id, 16, 0, BITS_NEGX | BITS_NEGZ),
-            BITS_POSX | BITS_NEGZ | BITS_POSY | BITS_NEGY: (slope_id, 22, 0, BITS_NEGX | BITS_POSZ),
-            BITS_NEGX | BITS_POSY | BITS_POSZ | BITS_NEGZ: (slope_id, 3, 0, BITS_POSX | BITS_NEGY),
-            BITS_NEGX | BITS_NEGY | BITS_POSZ | BITS_NEGZ: (slope_id, 15, 0, BITS_POSX | BITS_POSY),
-            BITS_NEGX | BITS_POSZ | BITS_POSY | BITS_NEGY: (slope_id, 21, 0, BITS_POSX | BITS_NEGZ),
-            BITS_NEGX | BITS_NEGZ | BITS_POSY | BITS_NEGY: (slope_id, 19, 0, BITS_POSX | BITS_POSZ),
-            BITS_POSY | BITS_POSZ | BITS_POSX | BITS_NEGX: (slope_id, 0, 0, BITS_NEGY | BITS_NEGZ),
-            BITS_POSY | BITS_NEGZ | BITS_POSX | BITS_NEGX: (slope_id, 2, 0, BITS_NEGY | BITS_POSZ),
-            BITS_NEGY | BITS_POSZ | BITS_POSX | BITS_NEGX: (slope_id, 12, 0, BITS_POSY | BITS_NEGZ),
-            BITS_NEGY | BITS_NEGZ | BITS_POSX | BITS_NEGX: (slope_id, 14, 0, BITS_POSY | BITS_POSZ),
+            BITS_POSX | BITS_POSY | BITS_POSZ | BITS_NEGZ: (slope_id, 1, 0, BITS_NEGX | BITS_NEGY, BITS_POSX | BITS_POSY),
+            BITS_POSX | BITS_NEGY | BITS_POSZ | BITS_NEGZ: (slope_id, 13, 0, BITS_NEGX | BITS_POSY, BITS_POSX | BITS_NEGY),
+            BITS_POSX | BITS_POSZ | BITS_POSY | BITS_NEGY: (slope_id, 16, 0, BITS_NEGX | BITS_NEGZ, BITS_POSX | BITS_POSZ),
+            BITS_POSX | BITS_NEGZ | BITS_POSY | BITS_NEGY: (slope_id, 22, 0, BITS_NEGX | BITS_POSZ, BITS_POSX | BITS_NEGZ),
+            BITS_NEGX | BITS_POSY | BITS_POSZ | BITS_NEGZ: (slope_id, 3, 0, BITS_POSX | BITS_NEGY, BITS_NEGX | BITS_POSY),
+            BITS_NEGX | BITS_NEGY | BITS_POSZ | BITS_NEGZ: (slope_id, 15, 0, BITS_POSX | BITS_POSY, BITS_NEGX | BITS_NEGY),
+            BITS_NEGX | BITS_POSZ | BITS_POSY | BITS_NEGY: (slope_id, 21, 0, BITS_POSX | BITS_NEGZ, BITS_NEGX | BITS_POSZ),
+            BITS_NEGX | BITS_NEGZ | BITS_POSY | BITS_NEGY: (slope_id, 19, 0, BITS_POSX | BITS_POSZ, BITS_NEGX | BITS_NEGZ),
+            BITS_POSY | BITS_POSZ | BITS_POSX | BITS_NEGX: (slope_id, 0, 0, BITS_NEGY | BITS_NEGZ, BITS_POSY | BITS_POSZ),
+            BITS_POSY | BITS_NEGZ | BITS_POSX | BITS_NEGX: (slope_id, 2, 0, BITS_NEGY | BITS_POSZ, BITS_POSY | BITS_NEGZ),
+            BITS_NEGY | BITS_POSZ | BITS_POSX | BITS_NEGX: (slope_id, 12, 0, BITS_POSY | BITS_NEGZ, BITS_NEGY | BITS_POSZ),
+            BITS_NEGY | BITS_NEGZ | BITS_POSX | BITS_NEGX: (slope_id, 14, 0, BITS_POSY | BITS_POSZ, BITS_NEGY | BITS_NEGZ),
         }
         def invcornerness(v, corners, slopes, square_in_dir_map):
             corner_adjacency = adjacency_bitmap(v, corners) | adjacency_bitmap(v, slopes)
@@ -313,7 +315,7 @@ def main():
                 if dir_to_v & square_in_dir_map.get(n, 0):
                     corner_adjacency = corner_adjacency & (0xFF ^ dir_to_n)
 
-            return inverse_cornerness_map.get(empty_space_bitmap(v) | corner_adjacency, (None, None, None, None)) + (corner_adjacency,)
+            return inverse_cornerness_map.get(empty_space_bitmap(v) | corner_adjacency, (None, None, None, None, None)) + (corner_adjacency,)
 
         placed_corners = set()
         placed_slopes = set()
@@ -341,13 +343,13 @@ def main():
         outermost_voxels = voxels_by_depth[1]
 
         for v in outermost_voxels:
-            block_id, rot, to_test, square_in_dir, corner_adjacency = invcornerness(v, placed_corners, placed_slopes, square_in_dir_for_voxels)
+            block_id, rot, to_test, square_in_dir, empty_in_dir, corner_adjacency = invcornerness(v, placed_corners, placed_slopes, square_in_dir_for_voxels)
             placing_block = False
             if block_id is not None and rot is not None:
                 if block_id == invcorner_id and corner_adjacency > 0 and adjacency_bitmap(v, voxels_by_depth[2]) & to_test == 0:
                     placed_invcorners.add(v)
                     placing_block = True
-                elif block_id == slope_id and adjacency_bitmap(v, voxels_by_depth[2]) & to_test == 0:
+                elif block_id == slope_id and adjacency_bitmap(v, voxels_by_depth[2]) & to_test == 0 and adjacency_bitmap(v, voxels) & empty_in_dir == 0:
                     placed_slopes.add(v)
                     placing_block = True
 
