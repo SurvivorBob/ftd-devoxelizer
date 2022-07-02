@@ -55,8 +55,8 @@ You must specify the following:
   * `voxels` is a list containing one JSON object per voxel, each object
     with the keys `x`, `y` and `z` mapping to the x, y, and z positions
     of that voxel
-  * +x corresponds to right, +y corresponds to forward, +z corresponds
-    to up (TODO: make this configurable at runtime)
+  * +x corresponds to right, +y corresponds to up, +z corresponds
+    to forward
 * `donor_blueprint`: a FTD blueprint file containing an authoring tag
   (author and object ID information) you want to associate with the
   final blueprint
@@ -78,6 +78,8 @@ You may also specify the following:
 * `--no-beams`: if set, skips the step where we opportunistically
   convert runs of single blocks into beams (if you want all single
   blocks for some reason)
+* `--swap-yz`: if set, swaps the Y and Z coordinates of voxels while
+  loading them (may be necessary for some models)
 
 Example usage
 -------------
@@ -98,15 +100,16 @@ will produce a coarse 4-layer rendition of the solid as a FTD blueprint.
 
 Tweaking
 --------
-Until there's a CLI option to do this (TODO), if you need to change the
-way input coordinates are mapped to output coordinates (e.g. your model
-is importing on its side or facing the wrong way), you can edit the part
-of the script commented "transform the voxel coordinates".
+Until there's a CLI option to do this comprehensively, if you need to
+change the way input coordinates are mapped to output coordinates (e.g.
+your model is importing on its side or facing the wrong way), you can
+edit the part of the script commented "transform the voxel coordinates".
 
 Other limitations
 -----------------
-* Smoothing does not handle all possibilities (e.g. square corners are
-  not handled), and is limited to 1-block slopes and corners.
+* Smoothing does not handle all possibilities (e.g. some weird angled
+  slopes and too thin plates will not be handled), and is limited to
+  1-block slopes and corners.
 * Converting a too large solid will take a long time and a lot of RAM.
 * 32 layers maximum (color limit).
 
